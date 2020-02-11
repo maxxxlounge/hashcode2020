@@ -43,7 +43,7 @@ func (o *Order) GetScore() int {
 func (o *Order) GetOutput() string {
 	output := ""
 	for _, pizza := range o.Best {
-		output += strconv.Itoa(pizza.Slices) + " "
+		output += strconv.Itoa(pizza.ID) + " "
 	}
 	return output
 }
