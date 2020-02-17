@@ -2,23 +2,26 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 )
 
-type Pizzas map[int]int
+type Solution struct {
+	pieces []int
+	types  int
+}
 
-
-func parseInputFromFile(filename string) (int, int,map[int]int, error){
+func parseInputFromFile(filename string) (int, []int, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return 0, 0, nil, err
+		return 0, nil, err
 	}
-	var maxSlice, pizzaTypes int
+	var maxSlice int
+	var pp []int
 	defer file.Close()
-	p := make (map[int]int)
 	scanner := bufio.NewScanner(file)
 	i := 0
 	for scanner.Scan() {
@@ -27,70 +30,110 @@ func parseInputFromFile(filename string) (int, int,map[int]int, error){
 			pieces := strings.Split(row, " ")
 			maxSlice, err = strconv.Atoi(pieces[0])
 			if err != nil {
-				return 0, 0, nil, err
+				return 0, nil, err
 			}
-			pizzaTypes, err = strconv.Atoi(pieces[1])
+			pl, err := strconv.Atoi(pieces[1])
 			if err != nil {
-				return 0, 0, nil, err
+				return 0, nil, err
 			}
+			pp = make([]int, pl)
 		} else {
 			slices := strings.Split(row, " ")
-			ID := 0
-			for _, slice := range slices{
+			for y, slice := range slices {
 				intSlice, err := strconv.Atoi(slice)
 				if err != nil {
-					return 0, 0, nil, err
+					return 0, nil, err
 				}
-				p[ID]=intSlice
-				ID++
+				pp[y] = intSlice
 			}
 		}
 		i++
 	}
 
 	if err := scanner.Err(); err != nil {
-		return 0, 0, nil, err
+		return 0, nil, err
 	}
 
-	return maxSlice, pizzaTypes, p, nil
+	return maxSlice, pp, nil
 }
 
+var ff []string
 
+// Return points and errors
+func elaborate(maxSlice int, p []int) (int, []int, error) {
+	var s []int
+	var pp int
+	outputType := 0
+	for i := len(p) - 1; i > 0; i-- {
+		if pp+p[i] > maxSlice {
+			continue
+		}
+		pp += p[i]
+		s = append(s, i)
+		outputType++
+	}
+	return pp, s, nil
+}
 
-func main(){
-	filename := "e_also_big.in"
-	var maxSlices,_ int
-	var p map[int]int
-	maxSlices,_,p,err := parseInputFromFile(filename)
+func writeSolution(filename string, solution []int) error {
+	filename = strings.Replace(filename, ".in", ".out", -1)
+	outFile, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	_, err = outFile.WriteString(strconv.Itoa(len(solution)) + "\n")
+	if err != nil {
+		return err
+	}
+	for _, pt := range solution {
+		_, err = outFile.WriteString(strconv.Itoa(pt) + " ")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ProcessFile(filename string) error {
+	maxSlices, p, err := parseInputFromFile(filename)
+	if err != nil {
+		return err
+	}
+	point := 0
+	var solution []int
+
+	point, solution, err = elaborate(maxSlices, p)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("point:%v perc:%.2f \n", point, float64(len(solution)/len(p)))
+
+	err = writeSolution(filename, solution)
+	return err
+}
+
+func main() {
+	var err error
+
+	err = ProcessFile("a_example.in")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	var solution []int
-	total := maxSlices
-	outputType := 0
-	for k,v := range p{
-		if total - v <= 0 {
-			continue
-		}
-		total -= v
-		solution = append(solution,k)
-		outputType++
-	}
-
-	filename = strings.Replace(filename,".in",".out",-1)
-	outFile, err := os.Create(filename)
+	err = ProcessFile("b_small.in")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
-	_, err = outFile.WriteString(strconv.Itoa(outputType) + "\n")
+	err = ProcessFile("c_medium.in")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
-	for _,pt := range solution {
-		_, err = outFile.WriteString(strconv.Itoa(pt) + " ")
-		if err != nil {
-			log.Fatal(err)
-		}
+	err = ProcessFile("d_quite_big.in")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = ProcessFile("e_also_big.in")
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 
 }
