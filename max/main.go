@@ -61,12 +61,13 @@ func parseInputFromFile(filename string) (int, []int, error) {
 var ff []string
 
 // Return points and errors
-func elaborate(maxSlice int, p []int) (int, []int, error) {
+func elaborate(target int, p []int) (int, []int, error) {
 	var s []int
-	pp := genetic.GeneratePopulation(maxSlice, 500, p)
+	pp := genetic.GeneratePopulation(target, 500, p)
 	found := false
 	for !found {
-		pop := genetic.NaturalSelection(p)
+		var pp2 genetic.Population
+		pp = genetic.NaturalSelection(pp2, pp, target)
 	}
 
 	//outputType := 0
@@ -78,7 +79,7 @@ func elaborate(maxSlice int, p []int) (int, []int, error) {
 		s = append(s, i)
 		outputType++
 	}*/
-	return pp, s, nil
+	return len(pp), s, nil
 }
 
 func writeSolution(filename string, solution []int) error {
