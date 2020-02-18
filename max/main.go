@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/maxxxlounge/hashcode2020/max/genetic"
 	"log"
 	"os"
 	"strconv"
@@ -62,16 +63,21 @@ var ff []string
 // Return points and errors
 func elaborate(maxSlice int, p []int) (int, []int, error) {
 	var s []int
-	var pp int
-	outputType := 0
-	for i := len(p) - 1; i > 0; i-- {
+	pp := genetic.GeneratePopulation(maxSlice, 500, p)
+	found := false
+	for !found {
+		pop := genetic.NaturalSelection(p)
+	}
+
+	//outputType := 0
+	/*for i := len(p) - 1; i > 0; i-- {
 		if pp+p[i] > maxSlice {
 			continue
 		}
 		pp += p[i]
 		s = append(s, i)
 		outputType++
-	}
+	}*/
 	return pp, s, nil
 }
 
