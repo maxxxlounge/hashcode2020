@@ -1,10 +1,9 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"github.com/pkg/errors"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -32,23 +31,19 @@ func parseInputFromFile(filename string) (AllBooks []Book, Libraries []Library, 
 		return nil, nil, 0, 0, 0, err
 	}
 
+	out, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, nil, 0, 0, 0, err
+	}
+
 	defer file.Close()
 
-	r := bufio.NewReader(file)
-
-	i := 0
 	var scanPerDayNr int
 	var bookPerDayNr int
 
-	for {
-		var buffer bytes.Buffer
-		rowb, _, err := r.ReadLine()
-		if err != nil {
-			log.Fatal(err)
-			break
-		}
-		buffer.Write(rowb)
-		row := buffer.String()
+	lines := strings.Split(string(out), "\n")
+
+	for i, row := range lines {
 		row = strings.Trim(row, " ")
 		if row == "" {
 			break
@@ -110,7 +105,6 @@ func parseInputFromFile(filename string) (AllBooks []Book, Libraries []Library, 
 				Libraries = append(Libraries, l)
 			}
 		}
-		i++
 	}
 	return
 }
@@ -185,11 +179,11 @@ func main() {
 		err = errors.Wrap(err, "error processing c.txt")
 		log.Fatal(err.Error())
 	}
-	/*err = ProcessFile("../input/d.txt")
+	err = ProcessFile("../input/d.txt")
 	if err != nil {
 		err = errors.Wrap(err, "error processing d.txt")
 		log.Fatal(err.Error())
-	}*/
+	}
 	err = ProcessFile("../input/e.txt")
 	if err != nil {
 		err = errors.Wrap(err, "error processing e.txt")
