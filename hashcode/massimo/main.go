@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/pkg/errors"
 	"log"
 	"os"
 	"strconv"
@@ -12,7 +13,7 @@ import (
 
 type Library struct {
 	//BooksNr           int
-	//Index int
+	Index             int
 	SighUpDay         int
 	MaxBookScanPerDay int
 	Books             []int
@@ -41,7 +42,6 @@ func parseInputFromFile(filename string) (AllBooks []Book, Libraries []Library, 
 
 	for {
 		var buffer bytes.Buffer
-
 		rowb, _, err := r.ReadLine()
 		if err != nil {
 			log.Fatal(err)
@@ -68,6 +68,7 @@ func parseInputFromFile(filename string) (AllBooks []Book, Libraries []Library, 
 			if err != nil {
 				return nil, nil, 0, 0, 0, err
 			}
+			break
 		case 1:
 			pieces := strings.Split(row, " ")
 			for j, p := range pieces {
@@ -77,8 +78,10 @@ func parseInputFromFile(filename string) (AllBooks []Book, Libraries []Library, 
 				}
 				AllBooks = append(AllBooks, Book{Index: j, Score: pi, SentForScan: false})
 			}
+			break
 		default:
 			pieces := strings.Split(row, " ")
+
 			if i%2 == 0 {
 				scanPerDay := pieces[1]
 				scanPerDayNr, err = strconv.Atoi(scanPerDay)
@@ -109,33 +112,18 @@ func parseInputFromFile(filename string) (AllBooks []Book, Libraries []Library, 
 		}
 		i++
 	}
-
 	return
-
 }
 
-var ff []string
-
-// Return points and errors
-func elaborate() (int, []int, error) {
-	panic("not implemented")
-}
-
-func writeSolution(filename string, solution []int) error {
-	filename = strings.Replace(filename, ".in", ".out", -1)
+func writeSolution(filename string, solution string) error {
+	filename = strings.Replace(filename, ".txt", ".txt.out", -1)
 	outFile, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
-	_, err = outFile.WriteString(strconv.Itoa(len(solution)) + "\n")
+	_, err = outFile.Write([]byte(solution))
 	if err != nil {
 		return err
-	}
-	for _, pt := range solution {
-		_, err = outFile.WriteString(strconv.Itoa(pt) + " ")
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -152,40 +140,65 @@ func ProcessFile(filename string) error {
 	fmt.Printf("BooksCount %+v\n", BooksCount)
 	fmt.Printf("DayForScanning %+v\n", DayForScanning)
 
-	/*point, solution, err = elaborate()
-	if err != nil {
-		return err
+	var libsToSigh []Library
+	remaingDay := DayForScanning
+	for li, l := range Libraries {
+		if remaingDay == 1 {
+			break
+		}
+		if l.SighUpDay < remaingDay {
+			l.Index = li
+			libsToSigh = append(libsToSigh, l)
+			remaingDay -= l.SighUpDay
+		}
 	}
-	fmt.Printf("point:%v perc:%.2f \n", point, float64(len(solution)/len(p)))
 
-	err = writeSolution(filename, solution)
-	return err*/
+	ll := strconv.Itoa(len(libsToSigh)) + "\n"
+	for _, l := range libsToSigh {
+		ll += strconv.Itoa(l.Index) + " " + strconv.Itoa(len(l.Books)) + "\n"
+		for _, b := range l.Books {
+			ll += strconv.Itoa(b) + " "
+		}
+		ll += "\n"
+	}
+	ll = strings.Replace(ll, " \n", "\n", -1)
+	err = writeSolution(filename, ll)
+
 	return nil
 }
 
 func main() {
 	var err error
 
-	err = ProcessFile("../input/b.txt")
+	err = ProcessFile("../input/a.txt")
 	if err != nil {
+		err = errors.Wrap(err, "error processing a.txt")
 		log.Fatal(err.Error())
 	}
-	/*
-		err = ProcessFile("b_small.in")
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		err = ProcessFile("c_medium.in")
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		err = ProcessFile("d_quite_big.in")
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-		err = ProcessFile("e_also_big.in")
-		if err != nil {
-			log.Fatal(err.Error())
-		}*/
+	err = ProcessFile("../input/b.txt")
+	if err != nil {
+		err = errors.Wrap(err, "error processing b.txt")
+		log.Fatal(err.Error())
+	}
+	err = ProcessFile("../input/c.txt")
+	if err != nil {
+		err = errors.Wrap(err, "error processing c.txt")
+		log.Fatal(err.Error())
+	}
+	/*err = ProcessFile("../input/d.txt")
+	if err != nil {
+		err = errors.Wrap(err, "error processing d.txt")
+		log.Fatal(err.Error())
+	}*/
+	err = ProcessFile("../input/e.txt")
+	if err != nil {
+		err = errors.Wrap(err, "error processing e.txt")
+		log.Fatal(err.Error())
+	}
+	err = ProcessFile("../input/f.txt")
+	if err != nil {
+		err = errors.Wrap(err, "error processing f.txt")
+		log.Fatal(err.Error())
+	}
 
 }
