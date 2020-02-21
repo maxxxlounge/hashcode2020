@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -16,6 +17,9 @@ type Library struct {
 	SighUpDay         int
 	MaxBookScanPerDay int
 	Books             []int
+	BookToScan        []int
+	BookPoints        int
+	AvgSighUp         int
 }
 
 type Book struct {
@@ -136,7 +140,9 @@ func ProcessFile(filename string) error {
 
 	var libsToSigh []Library
 	remaingDay := DayForScanning
-	for li, l := range Libraries {
+
+	for li := 0; li < len(Libraries); li++ {
+		l := Libraries[li]
 		if remaingDay == 1 {
 			break
 		}
@@ -147,15 +153,42 @@ func ProcessFile(filename string) error {
 		}
 	}
 
-	ll := strconv.Itoa(len(libsToSigh)) + "\n"
+	//sighuptimeavg := sighuptimesum / len(Libraries)
+
+	scannedBook := make(map[int]bool)
+	libtosighNotEmpty := []Library{}
+	sort.Slice(libsToSigh, func(i, j int) bool {
+		return (libsToSigh[i].MaxBookScanPerDay / libsToSigh[i].SighUpDay) > (libsToSigh[j].MaxBookScanPerDay / libsToSigh[j].SighUpDay)
+	})
 	for _, l := range libsToSigh {
-		ll += strconv.Itoa(l.Index) + " " + strconv.Itoa(len(l.Books)) + "\n"
-		for _, b := range l.Books {
-			ll += strconv.Itoa(b) + " "
+		l.BookToScan = []int{}
+		for i := 0; i < len(l.Books); i++ {
+			if scannedBook[l.Books[i]] == false {
+				l.BookToScan = append(l.BookToScan, l.Books[i])
+				scannedBook[l.Books[i]] = true
+			}
+		}
+		sort.Slice(l.BookToScan, func(i, j int) bool {
+			return l.BookToScan[i] > l.BookToScan[j]
+		})
+		if len(l.BookToScan) == 0 {
+			continue
+		}
+		libtosighNotEmpty = append(libtosighNotEmpty, l)
+	}
+
+	ll := ""
+	ll += strconv.Itoa(len(libtosighNotEmpty)) + "\n"
+	for _, l := range libtosighNotEmpty {
+		ll += strconv.Itoa(l.Index) + " " + strconv.Itoa(len(l.BookToScan)) + "\n"
+		for bi, b := range l.BookToScan {
+			ll += strconv.Itoa(b)
+			if bi < len(l.BookToScan)-1 {
+				ll += " "
+			}
 		}
 		ll += "\n"
 	}
-	ll = strings.Replace(ll, " \n", "\n", -1)
 	err = writeSolution(filename, ll)
 
 	return nil
