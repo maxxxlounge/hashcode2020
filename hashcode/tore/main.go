@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"log"
@@ -11,6 +12,8 @@ import (
 	"strings"
 )
 
+const Debug = false
+
 type OutputLibrary struct {
 	ID int
 	Books []int
@@ -19,12 +22,12 @@ type OutputLibrary struct {
 type Library struct {
 	//BooksNr           int
 	Index             int
-	SighUpDay         int
-	RegisteryDayLeft	int
+	SignUpDay         int
+	RegisteryDayLeft  int
 	MaxBookScanPerDay int
 	Books             []*Book
-	MedianValue		float64
-	ScannedBook []int
+	GoodnessIndex       float64
+	ScannedBook       []int
 }
 
 type Book struct {
@@ -47,7 +50,7 @@ func parseInputFromFile(filename string) (AllBooks []Book, Libraries []Library, 
 
 	defer file.Close()
 
-	var scanPerDayNr int
+	var signUpDays int
 	var bookPerDayNr int
 	var libraryIndex int
 	lines := strings.Split(string(out), "\n")
@@ -88,7 +91,7 @@ func parseInputFromFile(filename string) (AllBooks []Book, Libraries []Library, 
 			if i%2 == 0 {
 				libraryIndex = int(math.Floor(float64(i/2)) - 1)
 				scanPerDay := pieces[1]
-				scanPerDayNr, err = strconv.Atoi(scanPerDay)
+				signUpDays, err = strconv.Atoi(scanPerDay)
 				if err != nil {
 					return nil, nil, 0, 0, 0, err
 				}
@@ -99,26 +102,28 @@ func parseInputFromFile(filename string) (AllBooks []Book, Libraries []Library, 
 				}
 			} else {
 				bb := make([]*Book, 0)
-				medianScore := 0
 				for _, p := range pieces {
 					pr, err := strconv.Atoi(p)
 					if err != nil {
 						return nil, nil, 0, 0, 0, err
 					}
 					book := &AllBooks[pr]
-					medianScore += book.Score
 					bb = append(bb, book)
 				}
+				score := 0
 				sort.Slice(bb, func(i, j int) bool {
 					return bb[i].Score > bb[j].Score
 				})
+				for k:=0; k<DayForScanning-signUpDays && k < len(bb); k++ {
+					score += bb[k].Score
+				}
 				l := Library{
-					Index:	libraryIndex,
-					SighUpDay:         scanPerDayNr,
-					RegisteryDayLeft: 	scanPerDayNr,
+					Index:             libraryIndex,
+					SignUpDay:         signUpDays,
+					RegisteryDayLeft:  signUpDays,
 					MaxBookScanPerDay: bookPerDayNr,
 					Books:             bb,
-					MedianValue: float64(medianScore)/float64(len(bb)),
+					GoodnessIndex: float64(score) * float64(bookPerDayNr) / float64(signUpDays),
 				}
 				Libraries = append(Libraries, l)
 			}
@@ -146,28 +151,30 @@ func ProcessFile(filename string) error {
 		return err
 	}
 
-	sort.Slice(Libraries, func(i, j int) bool {
-		return Libraries[i].MedianValue > Libraries[j].MedianValue
-	})
-
-	booksIndexAlreadyScan := make([]int, 0)
+	booksIndexAlreadyScan := make(map[int]bool, 0)
 	librariesReady := make([]*Library, 0)
 	librariesReadyArr := make([]int, 0)
 
 	isSignupActive := -1
 	outputLibraries := make(map[int]OutputLibrary,0)
-
-	//fmt.Printf("%+v\n\n", Libraries)
+	sort.Slice(Libraries, func(i, j int) bool {
+		return Libraries[i].GoodnessIndex > Libraries[j].GoodnessIndex
+	})
+	print("%+v\n\n", Libraries)
 	for i:= 0; i< DayForScanning; i++ {
 		//signup
-		//fmt.Printf("Day: %d\n", i)
+
+		print("Day: %d\n", i)
+		if i % 1000 == 0 {
+			fmt.Printf("Day: %d/%d\n", i, DayForScanning)
+		}
 		if isSignupActive == -1 {
 			for j, library := range Libraries {
-				if library.RegisteryDayLeft == library.SighUpDay {
-					//fmt.Printf("\tSignup library: %d\n", library.Index)
+				if library.RegisteryDayLeft == library.SignUpDay && library.SignUpDay < (DayForScanning - i){
+					print("\tSignup library: %d\n", library.Index)
 					Libraries[j].RegisteryDayLeft--
 					isSignupActive = j
-					//fmt.Printf("\tDay left: %d\n", Libraries[j].RegisteryDayLeft)
+					print("\tDay left: %d\n", Libraries[j].RegisteryDayLeft)
 					break
 				}
 			}
@@ -175,12 +182,12 @@ func ProcessFile(filename string) error {
 			if Libraries[isSignupActive].RegisteryDayLeft == 0 {
 				librariesReady = append(librariesReady, &(Libraries[isSignupActive]))
 				librariesReadyArr = append(librariesReadyArr,Libraries[isSignupActive].Index)
-				//fmt.Printf("\tSignup complete: %d\n", isSignupActive)
+				print("\tSignup complete: %d\n", isSignupActive)
 				isSignupActive = -1
 
 			} else {
 				Libraries[isSignupActive].RegisteryDayLeft--
-				//fmt.Printf("\tDay left: %d\n", Libraries[isSignupActive].RegisteryDayLeft)
+				print("\tDay left: %d\n", Libraries[isSignupActive].RegisteryDayLeft)
 			}
 		}
 
@@ -199,16 +206,23 @@ func ProcessFile(filename string) error {
 			for _,book := range readyLibrary.Books {
 				if !contains(booksIndexAlreadyScan,book.Index) && counter < readyLibrary.MaxBookScanPerDay {
 					outLibrary.Books = append(outLibrary.Books,book.Index)
-					booksIndexAlreadyScan = append(booksIndexAlreadyScan,book.Index)
+					booksIndexAlreadyScan[book.Index] = true
 					counter++
 				}
 			}
-			//fmt.Printf("\t%+v\n", outLibrary)
+			print("\t%+v\n", outLibrary)
 			outputLibraries[readyLibrary.Index] = outLibrary
 		}
 
+		//recalculate
+		/*
+		for _, l := range Libraries {
+			l.RecalculateGoodnessIndex(DayForScanning - 1, &booksIndexAlreadyScan)
+		}
+		 */
+
 	}
-	//fmt.Printf("%+v\n", outputLibraries)
+	print("%+v\n", outputLibraries)
 	ll := strconv.Itoa( len(outputLibraries) )+ "\n"
 	for _, out := range outputLibraries {
 		ll += strconv.Itoa(out.ID) + " " + strconv.Itoa(len(out.Books)) + "\n"
@@ -220,80 +234,44 @@ func ProcessFile(filename string) error {
 
 	ll = strings.Replace(ll, " \n", "\n", -1)
 	err = writeSolution(filename, ll)
-	/*
-	var libsToSigh []Library
-	remaingDay := DayForScanning
-	for _, l := range Libraries {
-		if remaingDay == 1 {
-			break
-		}
-		if l.SighUpDay < remaingDay {
-			libsToSigh = append(libsToSigh, l)
-			remaingDay -= l.SighUpDay
-		}
-	}
-	ll := strconv.Itoa(len(libsToSigh)) + "\n"
-	for _, l := range libsToSigh {
-		llbis := ""
-		counter := 0
-		for _, b := range l.Books {
-			if !contains(booksIndexAlreadyScan, b.Index) {
-				llbis += strconv.Itoa(b.Index) + " "
-				counter++
-				booksIndexAlreadyScan = append(booksIndexAlreadyScan, b.Index)
-			}
-		}
-		if llbis != "" {
-			ll = ll + strconv.Itoa(l.Index) + " " + strconv.Itoa(counter) + "\n" + llbis + "\n"
-		}
-	}
-	ll = strings.Replace(ll, " \n", "\n", -1)
-	err = writeSolution(filename, ll)
-	 */
+
 	return nil
 }
 
 func main() {
 	var err error
+	if len(os.Args) != 2 {
+		log.Fatalf("usage: go run main <filename>")
+	}
 
-	err = ProcessFile("../input/a.txt")
+	filename := os.Args[1]
+
+	err = ProcessFile("../input/" + filename + ".txt")
 	if err != nil {
 		err = errors.Wrap(err, "error processing a.txt")
 		log.Fatal(err.Error())
 	}
-	err = ProcessFile("../input/b.txt")
-	if err != nil {
-		err = errors.Wrap(err, "error processing b.txt")
-		log.Fatal(err.Error())
-	}
-	err = ProcessFile("../input/c.txt")
-	if err != nil {
-		err = errors.Wrap(err, "error processing c.txt")
-		log.Fatal(err.Error())
-	}
-	err = ProcessFile("../input/d.txt")
-	if err != nil {
-		err = errors.Wrap(err, "error processing d.txt")
-		log.Fatal(err.Error())
-	}
-	err = ProcessFile("../input/e.txt")
-	if err != nil {
-		err = errors.Wrap(err, "error processing e.txt")
-		log.Fatal(err.Error())
-	}
-	err = ProcessFile("../input/f.txt")
-	if err != nil {
-		err = errors.Wrap(err, "error processing f.txt")
-		log.Fatal(err.Error())
-	}
-
 }
 
-func contains(arr []int, str int) bool {
-	for _, a := range arr {
-		if a == str {
-			return true
-		}
+func contains(list map[int]bool, search int) bool {
+	_, exists := list[search]
+	return exists
+}
+
+func print(format string, a ...interface{}) {
+	if Debug {
+		fmt.Printf(format, a...)
 	}
-	return false
+}
+
+func (l *Library) RecalculateGoodnessIndex(daysForScanning int, alreadyRegisteredBooks *map[int]bool) {
+
+	// solo non registrate
+	if l.RegisteryDayLeft == l.SignUpDay {
+		bookScore := 0
+		for k:=0; k<daysForScanning-l.SignUpDay && k < len(l.Books) && !contains(*alreadyRegisteredBooks, l.Books[k].Index); k++ {
+			bookScore += l.Books[k].Score
+		}
+		l.GoodnessIndex = float64(bookScore) * float64(l.MaxBookScanPerDay) / float64(l.SignUpDay)
+	}
 }
