@@ -145,13 +145,6 @@ func ProcessFile(filename string) error {
 	if err != nil {
 		return err
 	}
-/*
-	fmt.Printf("AllBooks %+v\n", AllBooks)
-	fmt.Printf("Libraries %+v\n", Libraries)
-	fmt.Printf("LibraryCount %+v\n", LibraryCount)
-	fmt.Printf("BooksCount %+v\n", BooksCount)
-	fmt.Printf("DayForScanning %+v\n", DayForScanning)
-*/
 
 	sort.Slice(Libraries, func(i, j int) bool {
 		return Libraries[i].MedianValue > Libraries[j].MedianValue
@@ -164,22 +157,30 @@ func ProcessFile(filename string) error {
 	isSignupActive := -1
 	outputLibraries := make(map[int]OutputLibrary,0)
 
+	//fmt.Printf("%+v\n\n", Libraries)
 	for i:= 0; i< DayForScanning; i++ {
 		//signup
+		//fmt.Printf("Day: %d\n", i)
 		if isSignupActive == -1 {
 			for j, library := range Libraries {
-				if library.RegisteryDayLeft == library.MaxBookScanPerDay {
+				if library.RegisteryDayLeft == library.SighUpDay {
+					//fmt.Printf("\tSignup library: %d\n", library.Index)
 					Libraries[j].RegisteryDayLeft--
-					isSignupActive = library.Index
+					isSignupActive = j
+					//fmt.Printf("\tDay left: %d\n", Libraries[j].RegisteryDayLeft)
+					break
 				}
 			}
 		} else {
 			if Libraries[isSignupActive].RegisteryDayLeft == 0 {
-				librariesReady = append(librariesReady, &Libraries[isSignupActive])
+				librariesReady = append(librariesReady, &(Libraries[isSignupActive]))
 				librariesReadyArr = append(librariesReadyArr,Libraries[isSignupActive].Index)
+				//fmt.Printf("\tSignup complete: %d\n", isSignupActive)
 				isSignupActive = -1
+
 			} else {
 				Libraries[isSignupActive].RegisteryDayLeft--
+				//fmt.Printf("\tDay left: %d\n", Libraries[isSignupActive].RegisteryDayLeft)
 			}
 		}
 
@@ -194,19 +195,20 @@ func ProcessFile(filename string) error {
 				}
 			}
 
+			counter := 0
 			for _,book := range readyLibrary.Books {
-				counter := 0
 				if !contains(booksIndexAlreadyScan,book.Index) && counter < readyLibrary.MaxBookScanPerDay {
 					outLibrary.Books = append(outLibrary.Books,book.Index)
 					booksIndexAlreadyScan = append(booksIndexAlreadyScan,book.Index)
 					counter++
 				}
 			}
+			//fmt.Printf("\t%+v\n", outLibrary)
 			outputLibraries[readyLibrary.Index] = outLibrary
 		}
 
 	}
-
+	//fmt.Printf("%+v\n", outputLibraries)
 	ll := strconv.Itoa( len(outputLibraries) )+ "\n"
 	for _, out := range outputLibraries {
 		ll += strconv.Itoa(out.ID) + " " + strconv.Itoa(len(out.Books)) + "\n"
