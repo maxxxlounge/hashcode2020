@@ -4,7 +4,7 @@ import "fmt"
 
 func (d *ReadyToProcess) Analyze() error {
 	for _, l := range d.Libraries {
-		fmt.Printf("SignupDay: %v\n", l.SighUpDay)
+		fmt.Printf("SignupDay: %v\n", l.SignUpDay)
 		fmt.Printf("MaxBookScan: %v\n", l.MaxBookScanPerDay)
 		fmt.Printf("BookCount: %v\n", len(l.Books))
 		fmt.Printf("Days for scan all book: %v\n", len(l.Books)/l.MaxBookScanPerDay)

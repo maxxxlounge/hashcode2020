@@ -8,12 +8,13 @@ type OutputLibrary struct {
 type Library struct {
 	//BooksNr           int
 	Index             int
-	SighUpDay         int
+	SignUpDay         int
 	RegisteryDayLeft  int
 	MaxBookScanPerDay int
 	Books             []*Book
 	MedianValue       float64
 	ScannedBook       []int
+	GoodnessIndex     float64
 }
 
 type Book struct {
