@@ -33,3 +33,11 @@ type ReadyToProcess struct {
 	BooksCount     int
 	DayForScanning int
 }
+
+func (l *Library) GetSumBookPoint() int {
+	var s int
+	for _, b := range l.Books {
+		s += b.Score
+	}
+	return s
+}

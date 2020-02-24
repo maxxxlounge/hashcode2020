@@ -13,17 +13,23 @@ func ProcessFile(filename string) error {
 		return err
 	}
 
-	s, err := rte.Elaborate()
+	err = rte.Analyze()
 	if err != nil {
 		err = errors.Wrap(err, "error elaborating data")
 		return err
 	}
+	/*
+		s, err := rte.Elaborate()
+		if err != nil {
+			err = errors.Wrap(err, "error elaborating data")
+			return err
+			}
 
-	err = s.ParseOutput(filename)
-	if err != nil {
-		err = errors.Wrap(err, "error writing output")
-		return err
-	}
+		err = s.ParseOutput(filename)
+		if err != nil {
+			err = errors.Wrap(err, "error writing output")
+			return err
+		}*/
 	return nil
 }
 
@@ -55,7 +61,7 @@ func main() {
 		err = errors.Wrap(err, "error processing e.txt")
 		log.Fatal(err.Error())
 	}*/
-	err = ProcessFile("../f.txt")
+	err = ProcessFile("f.txt")
 	if err != nil {
 		err = errors.Wrap(err, "error processing f.txt")
 		log.Fatal(err.Error())

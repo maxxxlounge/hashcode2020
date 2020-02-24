@@ -100,5 +100,5 @@ func ParseInput(filename string) (out *ReadyToProcess, err error) {
 			}
 		}
 	}
-	return
+	return &data, nil
 }
