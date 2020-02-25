@@ -215,23 +215,26 @@ func ProcessFile(filename string) error {
 		}
 
 		//recalculate
-		/*
 		for _, l := range Libraries {
-			l.RecalculateGoodnessIndex(DayForScanning - 1, &booksIndexAlreadyScan)
+			l.RecalculateGoodnessIndex(DayForScanning - i - 1, &booksIndexAlreadyScan)
 		}
-		 */
 
 	}
 	print("%+v\n", outputLibraries)
-	ll := strconv.Itoa( len(outputLibraries) )+ "\n"
+	ll := ""
+	//ll := strconv.Itoa( len(outputLibraries) )+ "\n"
+	n :=0
 	for _, out := range outputLibraries {
-		ll += strconv.Itoa(out.ID) + " " + strconv.Itoa(len(out.Books)) + "\n"
-		for _, b := range out.Books {
-			ll += strconv.Itoa(b) + " "
+		if len(out.Books) > 0 {
+			ll += strconv.Itoa(out.ID) + " " + strconv.Itoa(len(out.Books)) + "\n"
+			for _, b := range out.Books {
+				ll += strconv.Itoa(b) + " "
+			}
+			ll += "\n"
+			n++
 		}
-		ll += "\n"
 	}
-
+	ll = strconv.Itoa( n )+ "\n" + ll
 	ll = strings.Replace(ll, " \n", "\n", -1)
 	err = writeSolution(filename, ll)
 
@@ -268,10 +271,14 @@ func (l *Library) RecalculateGoodnessIndex(daysForScanning int, alreadyRegistere
 
 	// solo non registrate
 	if l.RegisteryDayLeft == l.SignUpDay {
-		bookScore := 0
-		for k:=0; k<daysForScanning-l.SignUpDay && k < len(l.Books) && !contains(*alreadyRegisteredBooks, l.Books[k].Index); k++ {
-			bookScore += l.Books[k].Score
+		if l.SignUpDay >= daysForScanning {
+			l.GoodnessIndex = 0
+		} else {
+			bookScore := 0
+			for k := 0; k < daysForScanning-l.SignUpDay && k < len(l.Books) && !contains(*alreadyRegisteredBooks, l.Books[k].Index); k++ {
+				bookScore += l.Books[k].Score
+			}
+			l.GoodnessIndex = float64(bookScore) * float64(l.MaxBookScanPerDay) / float64(l.SignUpDay)
 		}
-		l.GoodnessIndex = float64(bookScore) * float64(l.MaxBookScanPerDay) / float64(l.SignUpDay)
 	}
 }
