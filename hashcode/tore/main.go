@@ -28,6 +28,7 @@ type Library struct {
 	Books             []*Book
 	GoodnessIndex       float64
 	ScannedBook       []int
+	TotalBookValue int
 }
 
 type Book struct {
@@ -114,7 +115,7 @@ func parseInputFromFile(filename string) (AllBooks []Book, Libraries []Library, 
 				sort.Slice(bb, func(i, j int) bool {
 					return bb[i].Score > bb[j].Score
 				})
-				for k:=0; k<DayForScanning-signUpDays && k < len(bb); k++ {
+				for k:=0; k<(DayForScanning-signUpDays) * bookPerDayNr && k < len(bb); k++ {
 					score += bb[k].Score
 				}
 				l := Library{
@@ -123,7 +124,8 @@ func parseInputFromFile(filename string) (AllBooks []Book, Libraries []Library, 
 					RegisteryDayLeft:  signUpDays,
 					MaxBookScanPerDay: bookPerDayNr,
 					Books:             bb,
-					GoodnessIndex: float64(score) * float64(bookPerDayNr) / float64(signUpDays),
+					GoodnessIndex: float64(score) / float64(signUpDays),
+					TotalBookValue: score,
 				}
 				Libraries = append(Libraries, l)
 			}
@@ -157,13 +159,14 @@ func ProcessFile(filename string) error {
 
 	isSignupActive := -1
 	outputLibraries := make(map[int]OutputLibrary,0)
-	sort.Slice(Libraries, func(i, j int) bool {
-		return Libraries[i].GoodnessIndex > Libraries[j].GoodnessIndex
-	})
 	print("%+v\n\n", Libraries)
-	for i:= 0; i< DayForScanning; i++ {
-		//signup
 
+	for i:= 0; i< DayForScanning; i++ {
+		sort.Slice(Libraries, func(i, j int) bool {
+			return Libraries[i].GoodnessIndex > Libraries[j].GoodnessIndex
+		})
+
+		//signup
 		print("Day: %d\n", i)
 		if i % 1000 == 0 {
 			fmt.Printf("Day: %d/%d\n", i, DayForScanning)
@@ -272,13 +275,14 @@ func (l *Library) RecalculateGoodnessIndex(daysForScanning int, alreadyRegistere
 	// solo non registrate
 	if l.RegisteryDayLeft == l.SignUpDay {
 		if l.SignUpDay >= daysForScanning {
-			l.GoodnessIndex = 0
+			l.GoodnessIndex = -99999
 		} else {
 			bookScore := 0
-			for k := 0; k < daysForScanning-l.SignUpDay && k < len(l.Books) && !contains(*alreadyRegisteredBooks, l.Books[k].Index); k++ {
+			for k := 0; k < (daysForScanning-l.SignUpDay) * l.MaxBookScanPerDay && k < len(l.Books) && !contains(*alreadyRegisteredBooks, l.Books[k].Index); k++ {
 				bookScore += l.Books[k].Score
 			}
-			l.GoodnessIndex = float64(bookScore) * float64(l.MaxBookScanPerDay) / float64(l.SignUpDay)
+			l.GoodnessIndex = float64(bookScore)  / float64(l.SignUpDay)
+			l.TotalBookValue = bookScore
 		}
 	}
 }
