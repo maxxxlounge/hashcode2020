@@ -171,17 +171,7 @@ func ProcessFile(filename string) error {
 		if i % 1000 == 0 {
 			fmt.Printf("Day: %d/%d\n", i, DayForScanning)
 		}
-		if isSignupActive == -1 {
-			for j, library := range Libraries {
-				if library.RegisteryDayLeft == library.SignUpDay && library.SignUpDay < (DayForScanning - i){
-					print("\tSignup library: %d\n", library.Index)
-					Libraries[j].RegisteryDayLeft--
-					isSignupActive = j
-					print("\tDay left: %d\n", Libraries[j].RegisteryDayLeft)
-					break
-				}
-			}
-		} else {
+		if isSignupActive != -1 {
 			if Libraries[isSignupActive].RegisteryDayLeft == 0 {
 				librariesReady = append(librariesReady, &(Libraries[isSignupActive]))
 				librariesReadyArr = append(librariesReadyArr,Libraries[isSignupActive].Index)
@@ -191,6 +181,17 @@ func ProcessFile(filename string) error {
 			} else {
 				Libraries[isSignupActive].RegisteryDayLeft--
 				print("\tDay left: %d\n", Libraries[isSignupActive].RegisteryDayLeft)
+			}
+		}
+		if isSignupActive == -1 {
+			for j, library := range Libraries {
+				if library.RegisteryDayLeft == library.SignUpDay && library.SignUpDay < (DayForScanning - i){
+					print("\tSignup library: %d\n", library.Index)
+					Libraries[j].RegisteryDayLeft--
+					isSignupActive = j
+					print("\tDay left: %d\n", Libraries[j].RegisteryDayLeft)
+					break
+				}
 			}
 		}
 
@@ -278,8 +279,12 @@ func (l *Library) RecalculateGoodnessIndex(daysForScanning int, alreadyRegistere
 			l.GoodnessIndex = -99999
 		} else {
 			bookScore := 0
-			for k := 0; k < (daysForScanning-l.SignUpDay) * l.MaxBookScanPerDay && k < len(l.Books) && !contains(*alreadyRegisteredBooks, l.Books[k].Index); k++ {
-				bookScore += l.Books[k].Score
+			c := 0
+			for k := 0; c < (daysForScanning-l.SignUpDay) * l.MaxBookScanPerDay && k < len(l.Books); k++ {
+				if !contains(*alreadyRegisteredBooks, l.Books[k].Index) {
+					bookScore += l.Books[k].Score
+					c++
+				}
 			}
 			l.GoodnessIndex = float64(bookScore)  / float64(l.SignUpDay)
 			l.TotalBookValue = bookScore
