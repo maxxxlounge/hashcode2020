@@ -275,12 +275,12 @@ func (l *Library) RecalculateGoodnessIndex(daysForScanning int, alreadyRegistere
 
 	// solo non registrate
 	if l.RegisteryDayLeft == l.SignUpDay {
-		if l.SignUpDay >= daysForScanning {
+		if l.SignUpDay > daysForScanning {
 			l.GoodnessIndex = -99999
 		} else {
 			bookScore := 0
 			c := 0
-			for k := 0; c < (daysForScanning-l.SignUpDay) * l.MaxBookScanPerDay && k < len(l.Books); k++ {
+			for k := 0; c <= (daysForScanning-l.SignUpDay) * l.MaxBookScanPerDay && k < len(l.Books); k++ {
 				if !contains(*alreadyRegisteredBooks, l.Books[k].Index) {
 					bookScore += l.Books[k].Score
 					c++
