@@ -18,18 +18,18 @@ func ProcessFile(filename string) error {
 		err = errors.Wrap(err, "error elaborating data")
 		return err
 	}
-	/*
-		s, err := rte.Elaborate()
-		if err != nil {
-			err = errors.Wrap(err, "error elaborating data")
-			return err
-			}
 
-		err = s.ParseOutput(filename)
-		if err != nil {
-			err = errors.Wrap(err, "error writing output")
-			return err
-		}*/
+	s, err := rte.Elaborate()
+	if err != nil {
+		err = errors.Wrap(err, "error elaborating data")
+		return err
+	}
+
+	err = s.ParseOutput(filename)
+	if err != nil {
+		err = errors.Wrap(err, "error writing output")
+		return err
+	}
 	return nil
 }
 

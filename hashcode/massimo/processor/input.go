@@ -90,7 +90,7 @@ func ParseInput(filename string) (out *ReadyToProcess, err error) {
 				})
 				l := Library{
 					Index:             libraryIndex,
-					SighUpDay:         scanPerDayNr,
+					SignUpDay:         scanPerDayNr,
 					RegisteryDayLeft:  scanPerDayNr,
 					MaxBookScanPerDay: bookPerDayNr,
 					Books:             bb,
